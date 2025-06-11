@@ -55,4 +55,7 @@ A complete Retrieval-Augmented Generation (RAG) system that processes PDFs to ex
 3. **Ask Questions**: Type questions about your documents in natural language
 4. **Get Answers**: The system will retrieve relevant content and generate answers
 
+![UI](data/system_flow/Screenshot%202025-06-11%20222210.png)
+User Interface
+
 """
