@@ -10,11 +10,17 @@ A complete Retrieval-Augmented Generation (RAG) system that processes PDFs to ex
 ![Text Extraction](data/system_flow/Screenshot%202025-06-11%20194806.png)
 
 - **Image Processing**: Extracts images and generates captions using Gemini Vision
+
 ![Image Processing](data/system_flow/Screenshot%202025-06-11%20195904.png)
+
 - **Table Extraction**: Extracts tables and converts them to structured format
+
 ![Table Extraction](data/system_flow/Screenshot%202025-06-11%20200004.png)
+
 - **Semantic Search**: Uses sentence transformers for embedding and FAISS for vector search
+
 ![Embedding Process](data/system_flow/Screenshot%202025-06-11%20201627.png)
+
 - **Multimodal QA**: Answers questions based on text, image, and table content
 - **Web Interface**: User-friendly Streamlit interface
 
