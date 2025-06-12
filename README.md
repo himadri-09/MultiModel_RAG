@@ -21,7 +21,14 @@ A complete Retrieval-Augmented Generation (RAG) system that processes PDFs to ex
 
 ![Embedding Process](data/system_flow/Screenshot%202025-06-11%20201627.png)
 
-- **Multimodal QA**: Answers questions based on text, image, and table content
+- **Query Decomposition**: Breaks complex multi-part questions into simpler sub-queries and answers them iteratively.
+
+![Query decomposer pipeline](data/system_flow/query_pipeline.png)
+
+- **Multimodal QA**: Answers questions based on a combination of text, image, and table content.
+
+- **Image Rendering in Answers**: Automatically displays relevant extracted images alongside generated answers for visual context.
+
 - **Web Interface**: User-friendly Streamlit interface
 
 ![Workflow diagram](data/system_flow/multimodal_pdf_rag_system_overview.png)
