@@ -2,6 +2,8 @@ import fitz  # PyMuPDF
 import pdfplumber
 import pickle
 import json
+import os
+from pdf2image import convert_from_path
 from typing import List, Dict, Any, Tuple
 from PIL import Image
 import pandas as pd
@@ -39,25 +41,23 @@ def extract_text_from_pdf(pdf_path: str) -> List[Dict[str, Any]]:
     return text_chunks
 
 # def extract_images_from_pdf(pdf_path: str) -> List[Dict[str, Any]]:
-#     """Extract images from PDF using PyMuPDF"""
+#     """Extract images and render full pages to capture diagrams in PDFs."""
 #     doc = fitz.open(pdf_path)
 #     image_chunks = []
 #     doc_name = Path(pdf_path).stem
-    
-#     for page_num in range(len(doc)):
-#         page = doc.load_page(page_num)
-#         image_list = page.get_images()
-        
-#         for img_index, img in enumerate(image_list):
+
+#     for page_num, page in enumerate(doc):
+#         # 🔹 1. Extract embedded images
+#         images = page.get_images(full=True)
+#         for img_index, img in enumerate(images):
 #             xref = img[0]
 #             pix = fitz.Pixmap(doc, xref)
-            
 #             if pix.n - pix.alpha < 4:  # GRAY or RGB
 #                 img_path = IMAGES_DIR / f"{doc_name}_page_{page_num + 1}_img_{img_index}.png"
 #                 pix.save(str(img_path))
-                
+
 #                 image_chunks.append({
-#                     'content': '',  # Will be filled by image captioning
+#                     'content': '',
 #                     'type': 'image',
 #                     'page_number': page_num + 1,
 #                     'doc_name': doc_name,
@@ -68,9 +68,25 @@ def extract_text_from_pdf(pdf_path: str) -> List[Dict[str, Any]]:
 #                         'image_index': img_index
 #                     }
 #                 })
-            
 #             pix = None
-    
+
+#         # 🔹 2. Render full page to capture diagrams/layouts
+#         rendered_pages = convert_from_path(pdf_path, dpi=200, first_page=page_num + 1, last_page=page_num + 1)
+#         if rendered_pages:
+#             full_page_img_path = IMAGES_DIR / f"{doc_name}_page_{page_num + 1}_rendered.png"
+#             rendered_pages[0].save(str(full_page_img_path), "PNG")
+
+#             image_chunks.append({
+#                 'content': '',
+#                 'type': 'image',
+#                 'page_number': page_num + 1,
+#                 'doc_name': doc_name,
+#                 'image_path': str(full_page_img_path),
+#                 'metadata': {
+#                     'rendered_page': True
+#                 }
+#             })
+
 #     doc.close()
 #     return image_chunks
 

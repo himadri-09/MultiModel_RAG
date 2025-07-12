@@ -2,11 +2,12 @@ import streamlit as st
 import tempfile
 import os
 import json
+import re
 from pathlib import Path
 from evaluation import evaluate_document
 
 from config import *
-from gemini_client import GeminiClient
+from qwen_client import QwenClient
 from vector_store import VectorStore
 from pdf_processor import PDFProcessor
 
@@ -23,10 +24,12 @@ def initialize_session_state():
         st.session_state.processed_files = []
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
+    if 'selected_model' not in st.session_state:
+        st.session_state.selected_model = "Gemini"
 
 def main():
     initialize_session_state()
-    
+
     st.title("📚 Multimodal PDF RAG System with Query Decomposition")
     st.markdown("Upload PDFs and ask any question. The system **always decomposes** your queries into sub-questions to generate rich, context-aware answers from text, images, and tables.")
 
@@ -38,17 +41,26 @@ def main():
             accept_multiple_files=True,
             help="Upload one or more PDF files to process"
         )
-        
+
         if uploaded_files and st.button("Process PDFs"):
             process_pdfs(uploaded_files)
-        
+
+        st.markdown("---")
+        st.header("LLM Model Choice")
+        selected_model = st.radio(
+            "Choose model for answering & decomposition:",
+            ["Gemini", "GPT"],
+            index=0
+        )
+        st.session_state.selected_model = selected_model
+
         st.markdown("---")
         st.header("Query Handling Info")
         st.info(
             "All queries are **automatically treated as complex** and broken down into sub-questions for improved retrieval and accuracy.\n\n"
             "Check the terminal/console for a detailed breakdown!"
         )
-        
+
         st.markdown("---")
         st.header("Evaluation Mode")
         evaluation_file = st.file_uploader(
@@ -89,7 +101,6 @@ def main():
                             st.write(f"{j}. {sub_q}")
                 st.markdown(f"**A{i+1}:** {answer}")
 
-                # 🔽 Render relevant images
                 relevant_images = chat_item.get('relevant_images', [])
                 if relevant_images:
                     with st.expander("🖼️ Relevant Images"):
@@ -98,7 +109,7 @@ def main():
                             caption = img.get("content", "")
                             page = img.get("page_number", "N/A")
                             if os.path.exists(image_path):
-                                st.image(image_path, caption=f"📄 Page {page}: {caption}", use_column_width=True)
+                                st.image(image_path, caption=f"📄 Page {page}: {caption}", width=300)
 
                 st.caption(f"📊 Chunks collected: {total_chunks} | Final reranked chunks: {reranked_chunks}")
                 st.divider()
@@ -113,7 +124,7 @@ def main():
         with col1:
             if st.button("Ask", type="primary"):
                 if question:
-                    ask_question(question)
+                    ask_question(question, st.session_state.selected_model)
                 else:
                     st.warning("Please enter a question.")
         with col2:
@@ -137,9 +148,8 @@ def main():
 def process_pdfs(uploaded_files):
     with st.spinner("Processing PDFs..."):
         try:
-            gemini_client = GeminiClient(GOOGLE_API_KEY)
             vector_store = VectorStore()
-            pdf_processor = PDFProcessor(gemini_client, vector_store)
+            pdf_processor = PDFProcessor(vector_store)
 
             temp_paths = []
             for uploaded_file in uploaded_files:
@@ -172,12 +182,16 @@ def process_pdfs(uploaded_files):
         except Exception as e:
             st.error(f"Error processing PDFs: {e}")
 
-def ask_question(question):
+def strip_html(text):
+    return re.sub(r'<[^>]+>', '', text)
+
+def ask_question(question, selected_model):
     with st.spinner("Processing your question..."):
         try:
-            result = st.session_state.pdf_processor.query(question)
+            result = st.session_state.pdf_processor.query(question, selected_model=selected_model)
 
-            answer = result.get('answer', 'No answer generated')
+            raw_answer = result.get('answer', 'No answer generated')
+            answer = strip_html(raw_answer)
 
             chat_entry = {
                 'question': question,
